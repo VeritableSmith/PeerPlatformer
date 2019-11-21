@@ -1,127 +1,190 @@
-function handlePlayerAnimation() {
+
+
+
+var introTimer = 175, interacted=false;
+var objY=0;
+function playIntro(context) {
+
+  if(!interacted) {
+    if(CONTROLS.player.fire) {interacted=true;}
+    context.fillStyle='black';
+    context.fillRect(0,0,GAME.canvas.width,GAME.canvas.height);
+    context.fillStyle='white';
+    context.font = "30px Arial";
+    context.fillText("COLOR ME", 175, 170);
+    context.fillText("DISTRESSED", 160, 210);
+    context.fillText("Press Space to Start", 120, 500);
+  }
+  else {
+    if(objY<=GAME.canvas.height-120) {
+      context.fillStyle='white';
+      context.fillRect(0,0,GAME.canvas.width,GAME.canvas.height);
+      RenderPlayer(context);
+      context.fillStyle='red';
+      context.fillRect(GAME.canvas.width/2-20, objY, 40,40);
+      objY+=5;
+    }
+    else {
+      introTimer--;
+      context.fillStyle='black';
+      context.fillText("OW!", 225, 200);
+      if(introTimer==0) {
+        GAME.levelTransition=true;
+      }
+      else if(introTimer<=100) {
+        context.fillText("Colors are the worst.", 130, 350);
+      }
+
+    }
+  }
+
+}
+
+
+var fireCounter=0;
+function animatePlayer() {
   if (CONTROLS.player.right) {
     PLAYER.x += PLAYER.playerSpeed;
-    //PLAYER.y +=  PLAYER.speed;
+    PLAYER.direction=1;
   }
   if (CONTROLS.player.left) {
     PLAYER.x -= PLAYER.playerSpeed;
-    //PLAYER.y -=  PLAYER.speed;
+    PLAYER.direction=-1;
   }
-  if (CONTROLS.player.up) {
-    // if (PLAYER.grounded){
-    //    var maxHeight = PLAYER.y - PLAYER.jumpHeight;
-    // //   var jumpSpeed = PLAYER.jumpSpeed;
-    // //   //var playerAccelerate = jum * 0.7;
-    //    PLAYER.grounded = false;
-    //  }
-    //
-    // //
-    // // if (PLAYER.y > maxHeight){
-    // //
-    // // //  PLAYER.y -= PLAYER.jumpSpeed;
-    // // PLAYER.y -= jumpSpeed;
-    // // jumpSpeed = jumpSpeed * 0.7;
-    // // } else {
-    // //   if (peak == false){
-    // //     peak == true;
-    // //     jumpSpeed = PLAYER.jumpSpeed;
-    // //   }
-    // //   PLAYER.y += jumpSpeed * 0.7;
-    // if (PLAYER.y > maxHeight) {
-    //   PLAYER.y -= PLAYER.jumpSpeed;
-    // } else {
-    // //   PLAYER.y += PLAYER.jumpSpeed;
-    //  }
+
+
+  if (CONTROLS.player.up&&PLAYER.speedY>=0) {
       if (PLAYER.grounded){
-        PLAYER.speedY = PLAYER.jumpSpeed;
-      }
-      PLAYER.grounded = false;
-      PLAYER.speedY -= 3;
-      PLAYER.y -= PLAYER.speedY
-      if (PLAYER.y <= PLAYER.jumpHeight){
-        PLAYER.speedY = 0;
-        CONTROLS.player.up = false;
-        CONTROLS.player.fall = true;
+          PLAYER.speedY = PLAYER.jumpSpeed;
+          PLAYER.grounded = false;
       }
 
+      if(PLAYER.speedY>-PLAYER.jumpSpeed){PLAYER.speedY -= 0.5;}
+      PLAYER.y -= PLAYER.speedY;
 
-    }
-    if (CONTROLS.player.fall){
-      //PLAYER.y += PLAYER.jumpSpeed;
-      if (PLAYER.y != GAME.canvas.height-100) {
-        PLAYER.speedY = -PLAYER.jumpSpeed;
-        PLAYER.speedY += 3;
+  }
+  else if (CONTROLS.player.fall||PLAYER.speedY<0){
+      if (PLAYER.y < GAME.canvas.height) {
+        if(PLAYER.speedY>-PLAYER.jumpSpeed){PLAYER.speedY -= 1;}
         PLAYER.y -= PLAYER.speedY;
-      } else {
+      }
+      else {
         PLAYER.grounded = true;
         CONTROLS.player.fall = false;
+        PLAYER.speedY=0;
+        PLAYER.y= GAME.canvas.height;
       }
     }
 
 
-
-  // if (CONTROLS.ship.rotateCounterClockwise) {
-  //   SPACE_SHIP.rotation += 4;
-  // }
-
-  // Check if asteroid is leaving the boundary, if so, switch sides
-  if (PLAYER.x > GAME.canvas.width - 100) {
-    PLAYER.x = 0;
-    //PLAYER.x = GAME.canvas.width - 100;
-  } else if (PLAYER.x < 0) {
-    PLAYER.x = GAME.canvas.width;
-    //PLAYER.x = 0;
-  } else if (PLAYER.y > GAME.canvas.height - 100) {
-    PLAYER.y = GAME.canvas.height - 100;
+  if (PLAYER.x+25 > GAME.canvas.width) {
+    PLAYER.x = GAME.canvas.width-25;
+  }
+  else if (PLAYER.x < 25) {
+    PLAYER.x = 25;
+  }
+  else if (PLAYER.y > GAME.canvas.height) {
+    PLAYER.y = GAME.canvas.height;
 
   }
-    else if (PLAYER.y < 0) {
-    //PLAYER.y = GAME.canvas.height;
+  else if (PLAYER.y < 0) {
     PLAYER.y = 0;
     PLAYER.speedY = -PLAYER.speedY;
   }
+
+  if(fireCounter>0) {fireCounter--;}
+  if(CONTROLS.player.fire&&fireCounter==0) {
+    fireCounter=20;
+    PLAYER.projectiles.push(new Projectile(PLAYER.x+PLAYER.direction*25, PLAYER.y-55, PLAYER.direction));
+  }
+
+  checkLevelRequirements();
 }
-function RenderPlayer(context){
-  if (!PLAYER.initialized) {
+
+var levelTimer = 100;
+function levelTransition(context) {
+  levelTimer--;
+  if(levelTimer>0) {
+    context.fillStyle='black';
+    context.fillRect(0,0,GAME.canvas.width, GAME.canvas.height);
+    context.fillStyle='white';
+    context.fillText("Level "+(GAME.level+1), 215, 335);
     return;
   }
-  var canvas = document.getElementById('mainCanvas');
-  var context = canvas.getContext('2d');
-  context.moveTo(PLAYER.x, PLAYER.y);
-  context.fillRect(PLAYER.x, PLAYER.y, 100, 100);
 
+  levelTimer=100;
+  if(GAME.level==0) {
+    GAME.levelTransition=false;
+    GAME.level++;
+    addPlatform(0, GAME.canvas.height-150, 100);
+    addPlatform(GAME.canvas.width-100, GAME.canvas.height-150, 100);
+    addPlatform(190, GAME.canvas.height-150, 130);
+    addPlatform(95,GAME.canvas.height-300,100);
+    addPlatform(GAME.canvas.width-195,GAME.canvas.height-300,100);
+    addPlatform(205, GAME.canvas.height-450, 100);
 
-  // context.lineWidth = 1;
-  // context.stroke();
+    PLAYER.obsGoal=5;
+    PLAYER.enemGoal=5;
+  }
+  else if(GAME.level==1) {
+    GAME.levelTransition=false;
+    GAME.level++;
+    while(GAME.platforms.length>0) {GAME.platforms.pop();}
+    while(GAME.obstacles.length>0) {GAME.obstacles.pop();}
+    while(GAME.enemies.length>0) {GAME.enemies.pop();}
+    addPlatform(0, GAME.canvas.height-150,400);
+    addPlatform(110,GAME.canvas.height-300, 400);
+    addPlatform(0, GAME.canvas.height-450,400);
+
+    PLAYER.health=3;
+    PLAYER.obsKilled=0;
+    PLAYER.obsGoal=10;
+    PLAYER.enemKilled=0;
+    PLAYER.enemGoal=5;
+  }
+  else if(GAME.level==2) {
+    //manageLevel3();
+  }
 }
 
 
 function runGame() {
   var canvas = document.getElementById('mainCanvas');
   var context = canvas.getContext('2d');
-  // context.fillStyle = "blue";
-  // context.fillRect (0, 0, GAME.canvas.width, GAME.canvas.height);
-  // context.beginPath();
-  // context.rect(0, 0, GAME.canvas.width, GAME.canvas.height);
-  // context.fillStyle = "#000000";
-  // context.fill();
 
   if (GAME.started) {
-
+    if(GAME.level==0) {
+      playIntro(context);
+    }
+    else if(GAME.level>=1) {
     // 1 - Reposition the objects
-    handlePlayerAnimation();
-    //HandleNewObjectMovement();
+    animatePlayer();
+    animatePlayerProjectiles();
+    animateObstacles();
+    animateEnemies();
+
+    checkPlatformCollision();
+    checkObstacleCollision();
+    checkEnemyCollision();
+    checkProjectileCollision();
+
 
     // 2 - Clear the CANVAS
     context.clearRect(0, 0, GAME.canvas.width, GAME.canvas.height);
 
     // 3 - Draw new items
+    RenderPlatforms(context);
     RenderPlayer(context);
-    //RenderNewObject(context);
+    RenderPlayerProjectiles(context);
+    RenderEnemies(context);
+    RenderObstacles(context);
+  }
+
+  if(GAME.levelTransition) {levelTransition(context);}
 
   } else {
     context.font = "30px Arial";
-    context.fillText("Game Over      Level " + GAME.level, 135, 200);
+    context.fillText("Game Over", 190, 350);
   }
   window.requestAnimationFrame(runGame);
 }

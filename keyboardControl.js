@@ -3,34 +3,28 @@ var CONTROLS = {
     right : false,
     left : false,
     up : false,
-    fall: false
-    // rotateClockwise : false,
-    // rotateCounterClockwise : false
-  // },
-  // fire : {
-  //   active : false,
-  //   lastFireTime : 0
+    fall: false,
+    fire : false
   }
-
 };
 
 document.addEventListener('keydown', function(event) {
   switch (event.key) {
-    case " ":
+    case "ArrowUp":
       CONTROLS.player.up = true;
       break;
-    // case "ArrowDown":
-    //   CONTROLS.player.backward = true;
-    //   break;
     case "ArrowLeft":
       CONTROLS.player.left = true;
       break;
     case "ArrowRight":
       CONTROLS.player.right = true;
       break;
-    // case " ":
-    //   CONTROLS.fire.active = true;
-    //   break;
+    case " ":
+      CONTROLS.player.fire=true;
+      break;
+    case "l":
+      GAME.level++;
+      break;
     default:
       break;
   }
@@ -38,22 +32,19 @@ document.addEventListener('keydown', function(event) {
 
 document.addEventListener('keyup', function(event) {
   switch (event.key) {
-    case " ":
+    case "ArrowUp":
       CONTROLS.player.up = false;
       CONTROLS.player.fall = true;
       break;
-    // case "ArrowDown":
-    //   CONTROLS.player.backward = false;
-    //   break;
     case "ArrowLeft":
       CONTROLS.player.left = false;
       break;
     case "ArrowRight":
       CONTROLS.player.right = false;
       break;
-    // case " ":
-    //   CONTROLS.fire.active = false;
-    //   break;
+      case " ":
+        CONTROLS.player.fire=false;
+        break;
     default:
       break;
   }
